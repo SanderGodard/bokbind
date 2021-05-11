@@ -1,0 +1,45 @@
+#!/bin/python3
+import gi.repository.GLib
+import dbus
+from dbus.mainloop.glib import DBusGMainLoop
+from bokbind import main
+# https://dbus.freedesktop.org/doc/dbus-python/dbus.lowlevel.html#dbus.lowlevel.MethodCallMessage
+
+class Args():
+	def __init__(self, parameters, title, text, silent):
+		self.parameters = parameters
+		self.title = title
+		self.text = text
+		self.silent = silent
+
+def notifications(bus, message):
+	if message.get_args_list(byte_arrays=True)[0][0] == ":":
+		return False
+	app = message.get_args_list(byte_arrays=True)[0]
+	# print(message.get_args_list(byte_arrays=True)[1])
+	# print(message.get_args_list(byte_arrays=True)[2])
+	title = message.get_args_list(byte_arrays=True)[3]
+	msg = message.get_args_list(byte_arrays=True)[4]
+
+	args = Args("", str(app + " - " + title), msg, False)
+	# args.parameters, args.title, args.text, args.silent
+	main("store", args)
+
+	# print(message.get_destination())
+	# print(message.get_interface())
+	# print(message.get_member())
+	# print(message.get_sender())
+	# print(bus)
+#	for i in message:
+#		print(i)
+	return True
+    # do your magic
+
+DBusGMainLoop(set_as_default=True)
+
+bus = dbus.SessionBus()
+bus.add_match_string_non_blocking("eavesdrop=true, interface='org.freedesktop.Notifications', member='Notify'")
+bus.add_message_filter(notifications)
+
+mainloop = gi.repository.GLib.MainLoop()
+mainloop.run()

@@ -310,10 +310,11 @@ def switch(mode, history, args, file, confFolder):
         return False
 
 
-def main():
-    mode, args = getArguments()
-    # print(mode)
-
+def main(mode=False, args=False):
+    if not mode and not args:
+        mode, args = getArguments()
+        # print(mode)
+    
     confFolder = getLocation()
     file = confFolder + histFile
     if not checkFileValidity(file, confFolder):
