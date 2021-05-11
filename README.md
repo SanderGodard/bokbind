@@ -1,2 +1,2 @@
 # bokbind
-notification wrapper that handles history, blacklist among other stuff
+notification wrapper that handles history and blacklist, among other stuff
