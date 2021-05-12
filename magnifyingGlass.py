@@ -2,8 +2,11 @@
 import gi.repository.GLib
 import dbus
 from dbus.mainloop.glib import DBusGMainLoop
-from bokbind import main
+import bokbind
+
+
 # https://dbus.freedesktop.org/doc/dbus-python/dbus.lowlevel.html#dbus.lowlevel.MethodCallMessage
+
 
 class Args():
 	def __init__(self, parameters, title, text, silent):
@@ -12,18 +15,36 @@ class Args():
 		self.text = text
 		self.silent = silent
 
+
 def notifications(bus, message):
+	# print(message)
 	if message.get_args_list(byte_arrays=True)[0][0] == ":":
 		return False
-	app = message.get_args_list(byte_arrays=True)[0]
-	# print(message.get_args_list(byte_arrays=True)[1])
-	# print(message.get_args_list(byte_arrays=True)[2])
 	title = message.get_args_list(byte_arrays=True)[3]
+	if title in ["Notification history", "Notifications"]:
+		return False
+	app = message.get_args_list(byte_arrays=True)[0]
 	msg = message.get_args_list(byte_arrays=True)[4]
 
-	args = Args("", str(app + " - " + title), msg, False)
+	# print(message.get_args_list()[1])
+	# print(message.get_args_list()[2])
+	# print(message.get_args_list()[5])
+	# print(message.get_args_list(byte_arrays=True)[6])
+	# print(message.get_args_list()[7])
+
+	if app == "notify-send":
+		silent = True
+		return False
+	else:
+		silent = False
+		# pass
+		#message.terminate()
+
+	args = Args("", str(title + " - " + app), msg, silent)
+	print(app + " - " + title + " - " + msg)
 	# args.parameters, args.title, args.text, args.silent
-	main("store", args)
+	if not bokbind.main("store", args):
+		print("	Failed to store")
 
 	# print(message.get_destination())
 	# print(message.get_interface())
@@ -34,6 +55,7 @@ def notifications(bus, message):
 #		print(i)
 	return True
     # do your magic
+
 
 DBusGMainLoop(set_as_default=True)
 

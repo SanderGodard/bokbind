@@ -10,7 +10,7 @@ standardBlacklist = [["head", "spotify"], ["body", "example"], ["head", "battery
 
 ogCommand = "notify-send-bin"
 
-homeLocation = ".config/notifWrapper/"
+homeLocation = ".config/bokbind/"
 histFile = "history.json"
 blackFile = "blacklisted.json"
 
@@ -174,6 +174,8 @@ def printHistory(history, timeSwitch):
             text += notif["head"] + " - " + notif["body"]
             if not i == len(history[0])-1:
                 text += "\n"
+        if text == "":
+            text = "Empty"
         print(text)
         return True
     except:
@@ -191,6 +193,8 @@ def notifyHistory(history, timeSwitch):
             body += notif["head"] + " - " + notif["body"]
             if not i == len(history[0])-1:
                 body += "\n"
+        if body == "":
+            body = "Empty"
         printNotification(title, body)
         return True
     except:
@@ -252,6 +256,7 @@ def storeNotification(history, passParams, headtext, bodytext, silent, file, con
         if writeHistory(history, file):
             if not silent and history[1]["notify"]:
                 printNotification(headtext, bodytext, passParams)
+                pass
         else:
             return False
     return True
@@ -314,7 +319,7 @@ def main(mode=False, args=False):
     if not mode and not args:
         mode, args = getArguments()
         # print(mode)
-    
+
     confFolder = getLocation()
     file = confFolder + histFile
     if not checkFileValidity(file, confFolder):
@@ -322,4 +327,5 @@ def main(mode=False, args=False):
     history = getJsonFromFile(file)
     return switch(mode, history, args, file, confFolder)
 
-main()
+if __name__ == "__main__":
+    main()

@@ -8,4 +8,4 @@ sudo mv /bin/notify-send /bin/notify-send-bin
 sudo cp /bin/notify-send-bin notify-send.bak
 sudo cp notify-send-replacement /bin/notify-send
 
-echo -e "Add \n$(pwd)/readnotif &\n to your computer startup file"
+echo -e "Add \n$(pwd)/magnifyingGlass.py &\n to your computer startup file"
