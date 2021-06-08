@@ -1,2 +1,15 @@
 #!/bin/bash
-/bin/bokbind store $@
+
+full=""
+whitespace="[[:space:]]"
+for i in "$@"
+do
+    if [[ $i =~ $whitespace ]]
+    then
+        i=\"$i\"
+    fi
+    full+="$i "
+done
+#echo "$full"
+
+/bin/bokbind store $full

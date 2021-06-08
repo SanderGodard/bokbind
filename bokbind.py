@@ -1,12 +1,13 @@
 #!/bin/python3
 import argparse
-from os import path, mkdir, environ
+from os import path, mkdir, environ, setsid
 import json
-from subprocess import run, PIPE
-from time import time
+from subprocess import run, PIPE, Popen
+from time import time, sleep
+from signal import SIGTERM
 
 standardHistory = [[], {"notify":True}]
-standardBlacklist = [["head", "spotify"], ["body", "example"], ["head", "battery"]]
+standardBlacklist = [["head", "spotify"], ["body", "example"], ["head", "battery"], ["head", "guake"]]
 
 ogCommand = "notify-send-bin"
 
@@ -14,7 +15,23 @@ homeLocation = ".config/bokbind/"
 histFile = "history.json"
 blackFile = "blacklisted.json"
 
+maxhistlen = 65
+
+# Read all notifications
 # dbus-monitor "interface='org.freedesktop.Notifications'" | grep --line-buffered "member=Notify\|string"
+
+# Kill all notifications
+# dbus-monitor "interface='org.freedesktop.Notifications'" | grep --line-buffered "member=Notify" | sed -u -e  's/.*/killall notify-osd/g' | bash
+
+
+# class respectQuotes(argparse.nargs):
+#     def __init__(self, option_strings, dest, nargs=None, **kwargs):
+#         if nargs is not None:
+#             raise ValueError("nargs not allowed")
+#         super().__init__(option_strings, dest, **kwargs)
+#     def __call__(self, parser, namespace, values, option_string=None):
+#         print('%r %r %r' % (namespace, values, option_string))
+#         setattr(namespace, self.dest, values)
 
 
 def getArguments():
@@ -37,8 +54,10 @@ def getArguments():
     store_parser = subparsers.add_parser('store')
     store_parser.add_argument('-s', '--silent', action="store_true", help='store but dont notify')
     # store_parser.add_argument('options', help='standard notify-send flags that will be sent through')
-    store_parser.add_argument('title', type=str)
-    store_parser.add_argument('text', type=str)
+    store_parser.add_argument('title', type=str, action="store", nargs="+")
+    store_parser.add_argument('text', type=str, action="store", nargs="+")
+    # store_parser.add_argument('title', type=str, action="store", nargs=respectQuotes)
+    # store_parser.add_argument('text', type=str, action="store", nargs=respectQuotes)
     store_parser.add_argument('-p', '--parameters', nargs='*', help="parameters (quote enclosed, without dashes) that will be passed through to notify-send")
 
     amount_parser = subparsers.add_parser('amount')
@@ -52,8 +71,9 @@ def getArguments():
     clear_parser.add_argument('-s', '--silent', action="store_true", help='clear but dont notify of it')
 
     args = parent_parser.parse_args()
-    #print(args)
     mode = args.mode
+    # if mode == "store":
+    #     print(args)
     return mode, args
 
 
@@ -87,6 +107,8 @@ def checkFileValidity(file, confFolder):
             with open(file, "w") as f:
                 json.dump(newContent, f)
             print("Made file: " + file)
+            if file[-len(blackFile):] == blackFile[-len(blackFile):]:
+                print("Don't forget to configure this file to your liking.")
         except:
             print("Could not create file: " + file)
             return False
@@ -147,6 +169,22 @@ def writeHistory(history, file):
     return True
 
 
+def dontShow():
+    pro = Popen("dbus-monitor \"interface='org.freedesktop.Notifications'\" | grep --line-buffered \"member=Notify\" | sed -u -e  's/.*/killall dunst/g' | bash", stdout=PIPE, preexec_fn=setsid)
+    sleep(10)
+    os.killpg(os.getpgid(pro.pid), SIGTERM)  # Send the signal to all the process groups
+
+
+def cleanText(text):
+    ellipsis = "..."
+    max = 100
+
+    text = text.replace("\n", "(newline) ")
+    if len(text) > max:
+        text = text[:max+1-len(ellipsis)] + ellipsis
+    return text
+
+
 def printNotification(title, text, passParams=None):
     try:
         if not passParams:
@@ -166,12 +204,17 @@ def printNotification(title, text, passParams=None):
 
 def printHistory(history, timeSwitch):
     try:
+        if len(history[0]) > maxhistlen:
+            print("Notification history - FULL")
+        else:
+            print("Notification history")
         text = ""
         for i, notif in enumerate(history[0]):
             spaces = " "
             if timeSwitch:
-                text += "[" + fixTime(notif["timestamp"]) + "]" + spaces
-            text += notif["head"] + " - " + notif["body"]
+                tim = fixTime(notif["timestamp"])
+                text += "[" + tim + "]" + spaces*(6-len(tim))
+            text += notif["head"] + " - " + cleanText(notif["body"])
             if not i == len(history[0])-1:
                 text += "\n"
         if text == "":
@@ -184,13 +227,17 @@ def printHistory(history, timeSwitch):
 
 def notifyHistory(history, timeSwitch):
     try:
-        title = "Notification history"
+        if len(history[0]) > maxhistlen:
+            title = "Notification history - FULL"
+        else:
+            title = "Notification history"
         body = ""
         for i, notif in enumerate(history[0]):
             spaces = " "
             if timeSwitch:
-                body += "[" + fixTime(notif["timestamp"]) + "]" + spaces
-            body += notif["head"] + " - " + notif["body"]
+                tim = fixTime(notif["timestamp"])
+                body += "[" + tim + "]" + spaces*(6-len(tim))
+            body += notif["head"] + " - " + cleanText(notif["body"])
             if not i == len(history[0])-1:
                 body += "\n"
         if body == "":
@@ -241,11 +288,51 @@ def blacklistedCheck(headtext, bodytext, confFolder):
     return False
 
 
-def storeNotification(history, passParams, headtext, bodytext, silent, file, confFolder):
-    if blacklistedCheck(headtext, bodytext, confFolder):
+def forceString(list):
+    tot = ""
+    for i in list:
+        if not i == list[-1]:
+            tot += i + " "
+        else:
+            tot += i
+    return tot
+
+
+def repairArguments(title, text):
+    tot = []
+    all = ""
+    for i in title + text:
+        all += i + " "
+    if '"' in all:
+        tot = all.split('"')
+    else:
+        tot = all.split(" ")
+    # tot = all
+    for i, el in enumerate(tot):
+        if el == "" or el == " ":
+            tot.pop(i)
+    q = '"'
+    title = q + tot[0].strip() + q
+    text = q + tot[1].strip() + q
+
+    return title, text
+
+
+def storeNotification(history, passParams, headtext, bodytext, silent, existing, file, confFolder):
+    # headtext = forceString(headtext)
+    # bodytext = forceString(bodytext)
+    # print(headtext)
+    # print(bodytext)
+    # print("------")
+    headtext, bodytext = repairArguments(headtext, bodytext)
+    # print(headtext)
+    # print(bodytext)
+    if blacklistedCheck(headtext, bodytext, confFolder) and not silent and history[1]["notify"]:
         if printNotification(headtext, bodytext, passParams):
             return True
     else:
+        if "-" in headtext.split(" "):
+            head = headtext.split(" - ")[1]
         newNotif = {}
         newNotif["timestamp"] = int(time())
         newNotif["head"] = headtext
@@ -253,10 +340,18 @@ def storeNotification(history, passParams, headtext, bodytext, silent, file, con
         # print(newNotif)
         history[0].append(newNotif)
 
+        # To make space, IE delete the oldest element
+        # print(len(history[0]))
+        # print(maxhistlen)
+        if len(history[0]) >= maxhistlen:
+            # history[0].pop(0)
+            del history[0][0]
         if writeHistory(history, file):
-            if not silent and history[1]["notify"]:
+            if not silent and history[1]["notify"] and not existing:
                 printNotification(headtext, bodytext, passParams)
                 pass
+            # else:
+            #     dontShow()
         else:
             return False
     return True
@@ -284,10 +379,7 @@ def toggleNotifications(history, silent, file):
 
 def clearNotifications(silent, alerts, file):
     history = standardHistory
-    if alerts:
-        history[1]["notify"] = alerts
-    elif not alerts:
-        history[1]["notify"] = not alerts
+    history[1]["notify"] = alerts
     if writeHistory(history, file):
         if not silent and alerts:
             printNotification("Notifications", "Notification have been cleared")
@@ -296,13 +388,13 @@ def clearNotifications(silent, alerts, file):
     return True
 
 
-def switch(mode, history, args, file, confFolder):
+def switch(mode, history, args, existing, file, confFolder):
     if mode.lower() == "print":
         return printHistory(history, args.time)
     elif mode.lower() == "notify":
         return notifyHistory(history, args.time)
     elif mode.lower() == "store":
-        return storeNotification(history, args.parameters, args.title, args.text, args.silent, file, confFolder)
+        return storeNotification(history, args.parameters, args.title, args.text, args.silent, existing, file, confFolder)
     elif mode.lower() == "amount":
         return amountOfNotifications(history, args.icon, args.number)
     elif mode.lower() == "toggle":
@@ -315,7 +407,7 @@ def switch(mode, history, args, file, confFolder):
         return False
 
 
-def main(mode=False, args=False):
+def main(mode=False, args=False, existing=False):
     if not mode and not args:
         mode, args = getArguments()
         # print(mode)
@@ -325,7 +417,8 @@ def main(mode=False, args=False):
     if not checkFileValidity(file, confFolder):
         exit()
     history = getJsonFromFile(file)
-    return switch(mode, history, args, file, confFolder)
+    return switch(mode, history, args, existing, file, confFolder)
+
 
 if __name__ == "__main__":
     main()

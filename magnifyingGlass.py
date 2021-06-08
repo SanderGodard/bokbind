@@ -40,10 +40,10 @@ def notifications(bus, message):
 		# pass
 		#message.terminate()
 
-	args = Args("", str(title + " - " + app), msg, silent)
+	args = Args("", str(app + " - " + title), msg, silent)
 	print(app + " - " + title + " - " + msg)
 	# args.parameters, args.title, args.text, args.silent
-	if not bokbind.main("store", args):
+	if not bokbind.main("store", args, True):
 		print("	Failed to store")
 
 	# print(message.get_destination())

@@ -1,0 +1,87 @@
+#!/bin/python3
+
+def repairArguments(title, text):
+    liste = []
+    word = ""
+    tot = []
+    for i in title:
+        liste.append(i)
+    for i in text:
+        liste.append(i)
+    for i in liste:
+        word += i + " "
+        if '"' in i:
+            if i[-1] == '"':
+                tot.append(word)
+                word = ""
+        # elif i == liste[0]:
+        #     tot.append(word)
+        #     word = ""
+        else:
+            tot.append(word)
+    if not len(tot) == 2:
+        title = "-"
+        text = ""
+        for i in tot:
+            text += i
+    else:
+        title = tot[0]
+        text = tot[1]
+    return tot, title, text
+
+
+def repairArguments2(title, text):
+    tot = []
+    all = ""
+    for i in title + text:
+        all += i + " "
+    quot = 0
+    print(all)
+    k = 0
+    for j, i in enumerate(all):
+        if i == '"':
+            quot += 1
+            if quot % 2 == 0:
+                tot.append(all[k:j+1])
+                k = j+2
+    title = tot[0]
+    text = tot[1]
+    return tot, title, text
+
+
+def repairArguments3(title, text):
+    tot = []
+    all = ""
+    for i in title + text:
+        all += i + " "
+    if '"' in all:
+        tot = all.split('"')
+    else:
+        tot = all.split(" ")
+    # tot = all
+    for i, el in enumerate(tot):
+        if el == "" or el == " ":
+            tot.pop(i)
+    # print(tot)
+    title = tot[0].strip()
+    text = tot[1].strip()
+
+    return title, text
+
+
+title = ['"ok boomer" "javel']
+text = ['da"']
+title = ['okboomer "javel']
+text = ['da"']
+title = ['"ok boomer"']
+text = ['aveld']
+title = ['okboomer']
+text = ['da']
+print(title)
+print(text)
+
+print("-------")
+title, text = repairArguments3(title, text)
+
+print(title)
+print(text)
