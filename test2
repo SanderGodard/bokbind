@@ -1,0 +1,28 @@
+#!/bin/python3
+
+def toggleNotifications():
+    state = False
+    if state:
+        #command = "dbus-monitor "+'"'+"interface='org.freedesktop.Notifications'"+'"'+" | grep --line-buffered "+'"'+"member=Notify"+'"'+" | sed -u -e  's/.*/killall notify-osd/g' | bash"
+# dbus-monitor "interface='org.freedesktop.Notifications'" | grep --line-buffered "member=Notify" | sed -u -e 's/.*/killall notify-osd/g' | bash
+        #command = ["dbus-monitor", '"'+"interface='org.freedesktop.Notifications'"+'"', "|", "grep", "--line-buffered", '"'+"member=Notify"+'"', "|", "sed", "-u", "-e", "'s/.*/killall", "notify-osd/g'", "|", "bash"]
+        import subprocess
+        p = subprocess.Popen(["/home/sGodard/Documents/tools/pythonProjects/bokbind/killAllNotifications.sh"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        tog = "OFF"
+        #full = ""
+        #for i in command:
+        #    full += i + " "
+        #print(full)
+    elif not state:
+        import subprocess
+        p = subprocess.Popen(["/home/sGodard/Documents/tools/pythonProjects/bokbind/startNotifications.sh"], stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        tog = "ON"
+    else:
+        print("Something went wrong toggling notifications")
+        return False
+    print("Notifications", "Notification alert has been turned " + tog)
+    return True
+
+
+toggleNotifications()

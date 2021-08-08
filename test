@@ -52,8 +52,14 @@ def repairArguments2(title, text):
 def repairArguments3(title, text):
     tot = []
     all = ""
-    for i in title + text:
-        all += i + " "
+    newtitle = ""
+    newtext = ""
+    for i in title:
+        newtitle += i
+    for i in text:
+        newtext += i
+    all = newtitle + " " + newtext
+    print(all)
     if '"' in all:
         tot = all.split('"')
     else:
@@ -62,9 +68,13 @@ def repairArguments3(title, text):
     for i, el in enumerate(tot):
         if el == "" or el == " ":
             tot.pop(i)
-    # print(tot)
-    title = tot[0].strip()
-    text = tot[1].strip()
+    print(tot)
+    q = '"'
+    title = q + tot[0].strip() + q
+    res = ""
+    for i in tot[1:]:
+        res += i + " "
+    text = q + res.strip() + q
 
     return title, text
 
@@ -77,6 +87,12 @@ title = ['"ok boomer"']
 text = ['aveld']
 title = ['okboomer']
 text = ['da']
+title = ['"spotify - amaranth"']
+text = ['"nightwish - amari"']
+title = ['spotify']
+text = ['amaranth nightwish - amari']
+title = ['spotify']
+text = [' - amaranth nightwish - amari']
 print(title)
 print(text)
 

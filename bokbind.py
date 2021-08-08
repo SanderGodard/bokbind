@@ -15,7 +15,7 @@ homeLocation = ".config/bokbind/"
 histFile = "history.json"
 blackFile = "blacklisted.json"
 
-maxhistlen = 65
+maxhistlen = 60
 
 # Read all notifications
 # dbus-monitor "interface='org.freedesktop.Notifications'" | grep --line-buffered "member=Notify\|string"
@@ -301,19 +301,30 @@ def forceString(list):
 def repairArguments(title, text):
     tot = []
     all = ""
-    for i in title + text:
-        all += i + " "
+    newtitle = ""
+    newtext = ""
+    for i in title:
+        newtitle += i
+    for i in text:
+        newtext += i
+    all = newtitle + " " + newtext
+    # print(all)
     if '"' in all:
         tot = all.split('"')
     else:
         tot = all.split(" ")
-    # tot = all
     for i, el in enumerate(tot):
         if el == "" or el == " ":
             tot.pop(i)
+    # print(tot)
     q = '"'
     title = q + tot[0].strip() + q
-    text = q + tot[1].strip() + q
+    res = ""
+    for i in tot[1:]:
+        res += i + " "
+    text = q + res.strip() + q
+    # print(title)
+    # print(text)
 
     return title, text
 
@@ -360,9 +371,11 @@ def storeNotification(history, passParams, headtext, bodytext, silent, existing,
 def toggleNotifications(history, silent, file):
     state = history[1]["notify"]
     if state:
+        p = Popen(["/usr/lib/bokbind/killAllNotifications.sh"], stdin=PIPE, stderr=PIPE)
         history[1]["notify"] = not state
         tog = "OFF"
     elif not state:
+        p = Popen(["/usr/lib/bokbind/startNotifications.sh"], stdin=PIPE, stderr=PIPE)
         history[1]["notify"] = not state
         tog = "ON"
     else:
