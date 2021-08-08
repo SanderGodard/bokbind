@@ -1,11 +1,11 @@
 # bokbind
 
-notification wrapper that handles history and blacklist, among other stuff
-
+Notification wrapper that handles history and blacklist, among other stuff
+Mute notifications function is for now reliant on you using dunst as a notification display daemon
 
 ## Installation
 Run the `install.sh` script
-Then just add `/usr/lib/bokbind/magnifyingGlass.py &` to your startup config
+Then just add `exec /usr/lib/bokbind/magnifyingGlass.py &` to your startup config
 
 
 
@@ -24,7 +24,7 @@ exec = bokbind amount
 Then you just add `notif` to your modules list
 
 
-## TODO:
+## TODO (somewhat outdated):
 Add normal notification intercept script
 Send all notifications from script
 Stop all others
