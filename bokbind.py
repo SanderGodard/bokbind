@@ -15,7 +15,7 @@ homeLocation = ".config/bokbind/"
 histFile = "history.json"
 blackFile = "blacklisted.json"
 
-maxhistlen = 60
+maxhistlen = 50
 
 # Read all notifications
 # dbus-monitor "interface='org.freedesktop.Notifications'" | grep --line-buffered "member=Notify\|string"
@@ -204,7 +204,7 @@ def printNotification(title, text, passParams=None):
 
 def printHistory(history, timeSwitch):
     try:
-        if len(history[0]) > maxhistlen:
+        if len(history[0]) > maxhistlen+1:
             print("Notification history - FULL")
         else:
             print("Notification history")
@@ -227,7 +227,7 @@ def printHistory(history, timeSwitch):
 
 def notifyHistory(history, timeSwitch):
     try:
-        if len(history[0]) > maxhistlen:
+        if len(history[0]) > maxhistlen+1:
             title = "Notification history - FULL"
         else:
             title = "Notification history"
@@ -278,13 +278,16 @@ def blacklistedCheck(headtext, bodytext, confFolder):
     head = [x.lower() for x in headtext.split()]
     body = [x.lower() for x in bodytext.split()]
     for i in blacklist:
-        # print(i)
+        #print("Testing against:", i)
         if i[0] == "head":
             if i[1].lower() in head:
                 return True
         elif i[0] == "body":
             if i[1].lower() in body:
                 return True
+        #print("head:", head)
+        #print("body:", body)
+    #print("Not blacklisted")
     return False
 
 
@@ -318,14 +321,23 @@ def repairArguments(title, text):
             tot.pop(i)
     # print(tot)
     q = '"'
-    title = q + tot[0].strip() + q
+    # title = q + tot[0].strip() + q
+    title = tot[0].strip()
     res = ""
     for i in tot[1:]:
         res += i + " "
-    text = q + res.strip() + q
+    # text = q + res.strip() + q
+    text = res.strip()
     # print(title)
     # print(text)
-
+    for j in [text, title]:
+    	for i in [0, -1]:
+    	    if j[i] == '"' or j[i] == "'":
+    	    	if i == 0:
+    	    	    j = j[i+1:]
+    	    	elif i == -1:
+    	    	    j = j[:i]
+    print(title, text)
     return title, text
 
 
@@ -354,7 +366,7 @@ def storeNotification(history, passParams, headtext, bodytext, silent, existing,
         # To make space, IE delete the oldest element
         # print(len(history[0]))
         # print(maxhistlen)
-        if len(history[0]) >= maxhistlen:
+        if len(history[0]) >= maxhistlen+1:
             # history[0].pop(0)
             del history[0][0]
         if writeHistory(history, file):
