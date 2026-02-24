@@ -1,3 +1,8 @@
+# ARCHIVED
+
+Archived after discovering that the `notify-send`'s default notification daemon on my machine is able to handle history. Thus this becoming redundant.
+Just read the man page for `notify-send` for usage
+
 # bokbind
 
 Notification wrapper that handles history and blacklist, among other stuff
